@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iterator>
 
+
 void Tokenize(const std::string& str,
               std::vector<std::string>& tokens,
               const std::string& delimiters = " ") {
@@ -31,8 +32,10 @@ public:
   void print(std::ostream *os);
 
 private:
+  static const double kDefaultWeight;
+  enum { Weight = 0, Attr = 1, Label = 2};
   std::string fileName;
-  std::vector<std::string> labels;
+  std::map<std::string, int> labels;
   std::map<std::string, std::vector<double> > weights;
 };
 
@@ -41,6 +44,7 @@ Model::Model(const std::string& file)
     std::ifstream modelFile(fileName.c_str()); 
     std::string line;
     if (modelFile.is_open()) {
+      int i = 0;
       while (modelFile.good()) {
         getline(modelFile, line);
         std::vector<std::string> tokens;
@@ -48,9 +52,14 @@ Model::Model(const std::string& file)
         if (tokens.size() != 0) {
           if (tokens[0] == "@classias") {
           } else if (tokens[0] == "@label") {
-            labels.push_back(tokens[1]);
+            labels[tokens[1]] = i++;
           } else {
-            weights[tokens[1]].push_back(strtod(tokens[0].c_str(), NULL));
+            if (weights[tokens[Attr]].empty()) {
+              for (int j = 0; j < labels.size(); j++) {
+                weights[tokens[Attr]].push_back(kDefaultWeight);
+              }
+            }
+            weights[tokens[Attr]][labels[tokens[Label]]] = strtod(tokens[Weight].c_str(), NULL);
           }
         }
       }
@@ -59,22 +68,27 @@ Model::Model(const std::string& file)
 }
 
 void Model::print(std::ostream *os) {
-  std::map<std::string, std::vector<double> >::iterator it;
-  for (int i = 0; i < labels.size(); i++) {
-    *os << labels[i] << std::endl;
+  std::map<std::string, int>::iterator lit;
+  std::map<std::string, std::vector<double> >::iterator wit;
+  for (lit = labels.begin(); lit != labels.end(); lit++) {
+    *os << (*lit).first << ": " << (*lit).second << std::endl;
   }
-  for (it = weights.begin(); it != weights.end(); it++) {
-    *os << (*it).first << " => ";
-    for (int i = 0; i < (*it).second.size(); i++) {
-      *os << (*it).second[i] << " ";
+  for (wit = weights.begin(); wit != weights.end(); wit++) {
+    *os << (*wit).first << " => ";
+    for (int i = 0; i < (*wit).second.size(); i++) {
+      *os << (*wit).second[i] << " ";
     }
     *os << std::endl;
   }
 }
 
+const double Model::kDefaultWeight = 0.;
+
 void run_test() {
   Model mymodel("tests/train.sample");
   mymodel.print(&std::cout);
+  // Model mymodel2("tests/train.base.1.svm.model2");
+  // mymodel2.print(&std::cout);
 }
 
 int main(int argc, char *argv[]) {

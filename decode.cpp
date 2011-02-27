@@ -39,6 +39,16 @@ private:
   std::map<std::string, std::vector<double> > weights;
 };
 
+class Decoder {
+public:
+  Decoder(const std::string& modelFile, const std::string& targetFile);
+  void print_model(std::ostream *os);
+
+private:
+  Model model;
+  std::string targetFileName;
+};
+
 Model::Model(const std::string& file)
   :fileName(file), labels(), weights() {
     std::ifstream modelFile(fileName.c_str()); 
@@ -84,9 +94,17 @@ void Model::print(std::ostream *os) {
 
 const double Model::kDefaultWeight = 0.;
 
+Decoder::Decoder(const std::string& modelFile, const std::string& targetFile)
+  :model(modelFile), targetFileName(targetFile) {}
+
+void Decoder::print_model(std::ostream *os) {
+  *os << "target: " << targetFileName << std::endl;
+  model.print(os);
+}
+
 void run_test() {
-  Model mymodel("tests/train.sample");
-  mymodel.print(&std::cout);
+  Decoder mydecoder("tests/train.sample", "tests/test.base");
+  mydecoder.print_model(&std::cout);
   // Model mymodel2("tests/train.base.1.svm.model2");
   // mymodel2.print(&std::cout);
 }

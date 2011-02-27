@@ -6,21 +6,13 @@
 #include <algorithm>
 #include <iterator>
 
-void Tokenize(const std::string& str,
-              std::vector<std::string>& tokens,
-              const std::string& delimiters = " ") {
-  // Skip delimiters at beginning.
+void Tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters = " ") {
   std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-  // Find first "non-delimiter".
   std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
 
-  while (std::string::npos != pos || std::string::npos != lastPos)
-  {
-    // Found a token, add it to the vector.
+  while (std::string::npos != pos || std::string::npos != lastPos) {
     tokens.push_back(str.substr(lastPos, pos - lastPos));
-    // Skip delimiters.  Note the "not_of"
     lastPos = str.find_first_not_of(delimiters, pos);
-    // Find next "non-delimiter"
     pos = str.find_first_of(delimiters, lastPos);
   }
 }
@@ -48,8 +40,8 @@ public:
 private:
   Model model;
   std::string targetFileName;
-  std::vector<double> calcScores(const std::vector<std::string> attrs, const std::string& prev);
-  std::pair<std::string, double> predictAndCalcMergin(const std::vector<double> scores);
+  std::vector<double> calcScores(std::vector<std::string> attrs, const std::string& prev);
+  std::pair<std::string, double> predictAndCalcMergin(std::vector<double> scores);
 };
 
 Model::Model(const std::string& file)
@@ -104,16 +96,20 @@ void Decoder::decode(std::ostream *os) {
   std::ifstream targetFile(targetFileName.c_str());
   std::string line;
   std::string prev("");
+
   if (targetFile.is_open()) {
     while (targetFile.good()) {
       getline(targetFile, line);
       std::vector<std::string> tokens;
       Tokenize(line, tokens, "\t");
+
       if (!tokens.empty()) { 
         std::string ans = tokens[0];
         tokens.erase(tokens.begin());
+
         std::vector<double> scores = calcScores(tokens, prev);
         std::pair<std::string, double> pred_mergin = predictAndCalcMergin(scores);
+
         *os << ans << "\t" << pred_mergin.first << "\t" << pred_mergin.second << std::endl;
         prev = std::string(pred_mergin.first);
       } else {
@@ -130,7 +126,7 @@ void Decoder::print_model(std::ostream *os) {
   model.print(os);
 }
 
-std::vector<double> Decoder::calcScores(const std::vector<std::string> attrs, const std::string& prev) {
+std::vector<double> Decoder::calcScores(std::vector<std::string> attrs, const std::string& prev) {
   std::vector<double> scores (model.labels.size(), 0.);
   std::vector<std::string>::iterator it;
   std::map<std::string, std::vector<double> >::iterator wit;
@@ -153,10 +149,11 @@ std::vector<double> Decoder::calcScores(const std::vector<std::string> attrs, co
   return scores;
 }
 
-std::pair<std::string, double> Decoder::predictAndCalcMergin(const std::vector<double> scores) {
+std::pair<std::string, double> Decoder::predictAndCalcMergin(std::vector<double> scores) {
   std::vector<double>::iterator it;
   std::pair<double, int> max (0, 0);
   double next = 0;
+
   for (it = scores.begin(); it < scores.end(); it++) {
     if (*it > next) {
       if (*it > max.first) {
@@ -168,8 +165,10 @@ std::pair<std::string, double> Decoder::predictAndCalcMergin(const std::vector<d
       }
     }
   }
+
   std::map<std::string, int>::iterator lit;
   std::string predict;
+
   for (lit = model.labels.begin(); lit != model.labels.end(); lit++) {
     if ((*lit).second == max.second) predict = (*lit).first;
   }

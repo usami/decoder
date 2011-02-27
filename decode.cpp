@@ -48,8 +48,8 @@ public:
 private:
   Model model;
   std::string targetFileName;
-  std::vector<double> calcScores(std::vector<std::string> attrs, const std::string& prev);
-  std::pair<std::string, double> predictAndCalcMergin(std::vector<double> scores);
+  std::vector<double> calcScores(const std::vector<std::string> attrs, const std::string& prev);
+  std::pair<std::string, double> predictAndCalcMergin(const std::vector<double> scores);
 };
 
 Model::Model(const std::string& file)
@@ -130,7 +130,7 @@ void Decoder::print_model(std::ostream *os) {
   model.print(os);
 }
 
-std::vector<double> Decoder::calcScores(std::vector<std::string> attrs, const std::string& prev) {
+std::vector<double> Decoder::calcScores(const std::vector<std::string> attrs, const std::string& prev) {
   std::vector<double> scores (model.labels.size(), 0.);
   std::vector<std::string>::iterator it;
   std::map<std::string, std::vector<double> >::iterator wit;
@@ -153,7 +153,7 @@ std::vector<double> Decoder::calcScores(std::vector<std::string> attrs, const st
   return scores;
 }
 
-std::pair<std::string, double> Decoder::predictAndCalcMergin(std::vector<double> scores) {
+std::pair<std::string, double> Decoder::predictAndCalcMergin(const std::vector<double> scores) {
   std::vector<double>::iterator it;
   std::pair<double, int> max (0, 0);
   double next = 0;

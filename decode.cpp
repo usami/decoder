@@ -27,6 +27,7 @@ void Tokenize(const std::string& str,
 }
 
 class Model {
+  friend class Decoder;
 public:
   Model(const std::string& file);
   void print(std::ostream *os);
@@ -43,10 +44,13 @@ class Decoder {
 public:
   Decoder(const std::string& modelFile, const std::string& targetFile);
   void print_model(std::ostream *os);
+  void decode(std::ostream *os);
 
 private:
   Model model;
   std::string targetFileName;
+  std::vector<double> calcScores(std::vector<std::string> attrs);
+  std::pair<std::string, double> predictAndCalcMergin(std::vector<double> scores);
 };
 
 Model::Model(const std::string& file)
@@ -97,14 +101,76 @@ const double Model::kDefaultWeight = 0.;
 Decoder::Decoder(const std::string& modelFile, const std::string& targetFile)
   :model(modelFile), targetFileName(targetFile) {}
 
+void Decoder::decode(std::ostream *os) {
+  std::ifstream targetFile(targetFileName.c_str());
+  std::string line;
+  if (targetFile.is_open()) {
+    while (targetFile.good()) {
+      getline(targetFile, line);
+      std::vector<std::string> tokens;
+      Tokenize(line, tokens, "\t");
+      if (!tokens.empty()) { 
+        std::string ans = tokens[0];
+        tokens.erase(tokens.begin());
+        std::vector<double> scores = calcScores(tokens);
+        std::pair<std::string, double> pred_mergin = predictAndCalcMergin(scores);
+        *os << ans << "\t" << pred_mergin.first << "\t" << pred_mergin.second;
+      }
+      *os << std::endl;
+    }
+  }
+  targetFile.close();
+}
+
 void Decoder::print_model(std::ostream *os) {
   *os << "target: " << targetFileName << std::endl;
   model.print(os);
 }
 
+std::vector<double> Decoder::calcScores(std::vector<std::string> attrs) {
+  std::vector<double> scores (model.labels.size(), 0.);
+  std::vector<std::string>::iterator it;
+  std::map<std::string, std::vector<double> >::iterator wit;
+  std::map<std::string, int>::iterator lit;
+
+  for (it = attrs.begin(); it < attrs.end(); it++) {
+    if ((wit = model.weights.find(*it)) != model.weights.end()) {
+      std::vector<double> table = (*wit).second;
+      for (lit = model.labels.begin(); lit != model.labels.end(); lit++) {
+        scores[(*lit).second] += table[(*lit).second];
+      }
+    }
+  }
+  return scores;
+}
+
+std::pair<std::string, double> Decoder::predictAndCalcMergin(std::vector<double> scores) {
+  std::vector<double>::iterator it;
+  std::pair<double, int> max (0, 0);
+  double next = 0;
+  for (it = scores.begin(); it < scores.end(); it++) {
+    if (*it > next) {
+      if (*it > max.first) {
+        next = max.first;
+        max.first = *it;
+        max.second = it - scores.begin();
+      } else {
+        next = *it;
+      }
+    }
+  }
+  std::map<std::string, int>::iterator lit;
+  std::string predict;
+  for (lit = model.labels.begin(); lit != model.labels.end(); lit++) {
+    if ((*lit).second == max.second) predict = (*lit).first;
+  }
+  return std::pair<std::string, double> (predict, max.first - next);
+}
+
 void run_test() {
-  Decoder mydecoder("tests/train.sample", "tests/test.base");
+  Decoder mydecoder("tests/train.sample", "tests/test.sample");
   mydecoder.print_model(&std::cout);
+  mydecoder.decode(&std::cout);
   // Model mymodel2("tests/train.base.1.svm.model2");
   // mymodel2.print(&std::cout);
 }

@@ -33,13 +33,14 @@ private:
 
 class Decoder {
 public:
-  Decoder(const std::string& modelFile, const std::string& targetFile);
+  Decoder(const std::string& modelFile, const std::string& targetFile, const std::string& originalFile);
   void print_model(std::ostream *os);
   void decode(std::ostream *os);
 
 private:
   Model model;
   std::string targetFileName;
+  std::string originalFileName;
   std::vector<double> calcScores(std::vector<std::string> attrs, const std::string& prev);
   std::pair<std::string, double> predictAndCalcMergin(std::vector<double> scores);
 };
@@ -89,19 +90,23 @@ void Model::print(std::ostream *os) {
 
 const double Model::kDefaultWeight = 0.;
 
-Decoder::Decoder(const std::string& modelFile, const std::string& targetFile)
-  :model(modelFile), targetFileName(targetFile) {}
+Decoder::Decoder(const std::string& modelFile, const std::string& targetFile, const std::string& originalFile)
+  :model(modelFile), targetFileName(targetFile), originalFileName(originalFile) {}
 
 void Decoder::decode(std::ostream *os) {
   std::ifstream targetFile(targetFileName.c_str());
-  std::string line;
+  std::ifstream originalFile(originalFileName.c_str());
+  std::string line, oline;
   std::string prev("");
 
-  if (targetFile.is_open()) {
-    while (targetFile.good()) {
+  if (targetFile.is_open() && originalFile.is_open()) {
+    getline(originalFile, oline); // avoid first line
+    while (targetFile.good() && originalFile.good()) {
       getline(targetFile, line);
-      std::vector<std::string> tokens;
+      getline(originalFile, oline);
+      std::vector<std::string> tokens, otokens;
       Tokenize(line, tokens, "\t");
+      Tokenize(oline, otokens, "\t");
 
       if (!tokens.empty()) { 
         std::string ans = tokens[0];
@@ -110,7 +115,7 @@ void Decoder::decode(std::ostream *os) {
         std::vector<double> scores = calcScores(tokens, prev);
         std::pair<std::string, double> pred_mergin = predictAndCalcMergin(scores);
 
-        *os << ans << "\t" << pred_mergin.first << "\t" << pred_mergin.second << std::endl;
+        *os << ans << "\t" << pred_mergin.first << "\t" << pred_mergin.second << "\t" << otokens[1] << std::endl;
         prev = std::string(pred_mergin.first);
       } else {
         *os << std::endl;
@@ -176,7 +181,7 @@ std::pair<std::string, double> Decoder::predictAndCalcMergin(std::vector<double>
 }
 
 void run_test() {
-  Decoder mydecoder("tests/train.base.1.svm.model2", "tests/test.base");
+  Decoder mydecoder("tests/train.base.1.svm.model2", "tests/test.base", "tests/test.txt");
   // mydecoder.print_model(&std::cout);
   mydecoder.decode(&std::cout);
   // Model mymodel2("tests/train.base.1.svm.model2");

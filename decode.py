@@ -5,9 +5,9 @@ import collections
 import operator
 import math
 import optparse
-import history
+#import history
 
-H = history.Feature()
+#H = history.Feature()
 
 def read_model(fi):
     M = collections.defaultdict(dict)
@@ -106,15 +106,18 @@ def predict(X, M, L):
 
 def predict_1st(X, M, L, prev):
     S = {}
+    fo = sys.stdout
     for label in L:
+        #fo.write("%s\n" % label)
         score = M.get('$y[-1]=' + prev, {}).get(label, 0.)
         token = ''
         for x, v in X:
             score += M.get(x, {}).get(label, 0.) * v
+            #fo.write("%s\t%f\n" % (x, score))
             if x.startswith('w[0]='):
                 token = x[5:]
-        for x, v in H.get(token, label):
-            score += M.get(x, {}).get(label, 0.) * v
+        #for x, v in H.get(token, label):
+            #score += M.get(x, {}).get(label, 0.) * v
         S[label] = score
 
     S = sorted(S.iteritems(), key=operator.itemgetter(1), reverse=True)
@@ -127,7 +130,7 @@ def predict_1st(X, M, L, prev):
     #        smax = score
     #        argmax = label
     #margin = 0.
-    H.set(token, argmax)
+    #H.set(token, argmax)
     return argmax, margin
 
 
@@ -274,7 +277,7 @@ def sequences(fi):
         else:
             fields = line.split('\t')
             lseq.append(fields[0])
-            item = [('BIAS', 1.0),]
+            item = [('__BIAS__', 1.0),]
             for field in fields[1:]:
                 item.append((field, 1.))
             seq.append(item)

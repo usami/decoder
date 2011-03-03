@@ -202,8 +202,10 @@ int main(int argc, char *argv[]) {
   cout.precision(7);
   if (argc == 1) {
     run_test();
-  } else {
+  } else if (argc == 4) {
     Decoder decoder(argv[1], argv[2], argv[3]);
     decoder.decode(&cout);
+  } else {
+    cerr << "Usage: " << argv[0] << " [model file name] [test feature file name] [test file]" << endl;
   }
 }

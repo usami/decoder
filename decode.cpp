@@ -191,7 +191,8 @@ pair<string, double> Decoder::predictAndCalcMergin(vector<double> scores) {
 }
 
 void run_test() {
-  Decoder mydecoder("tests/train.hw.1.1.svm.model2", "tests/test.sample", "tests/dev.bionlp11epi.txt");
+  //Decoder mydecoder("tests/train.hw.1.1.svm.model2", "tests/test.base", "tests/dev.bionlp11epi.txt");
+  Decoder mydecoder("tests/c1model2", "tests/test.base", "tests/dev.bionlp11epi.txt");
   // mydecoder.print_model(&cout);
   mydecoder.decode(&cout);
   // Model mymodel2("tests/train.base.1.svm.model2");

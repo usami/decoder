@@ -45,6 +45,7 @@ private:
   string originalFileName;
   vector<double> calcScores(vector<string> attrs, const string& prev);
   pair<string, double> predictAndCalcMergin(vector<double> scores);
+  void printLog(vector<double> &scores, vector<string> &attrs, ostream *os, string &predict, string &ans);
 };
 
 Model::Model(const string& file)
@@ -119,6 +120,9 @@ void Decoder::decode(ostream *os) {
         pair<string, double> pred_mergin = predictAndCalcMergin(scores);
 
         *os << ans << "\t" << pred_mergin.first << "\t" << pred_mergin.second << "\t" << otokens[1] << endl;
+        if (ans != pred_mergin.first) {
+          printLog(scores, tokens, &cerr, pred_mergin.first, ans);
+        }
         prev = string(pred_mergin.first);
       } else {
         *os << endl;
@@ -127,6 +131,48 @@ void Decoder::decode(ostream *os) {
     }
   }
   targetFile.close();
+}
+
+void Decoder::printLog(vector<double> &scores, vector<string> &attrs, ostream *os, string &predict, string &ans) {
+  for (int i = -2; i < 3; i++) {
+    string prefix = "w[";
+    char w[4];
+    sprintf(w, "%d]=", i);
+    prefix += w;
+    for (vector<string>::iterator it = attrs.begin(); it != attrs.end(); it++) {
+      if (!(*it).compare(0, prefix.size(), prefix)) {
+        if (i == 0) *os << "[";
+        *os << (*it).substr(prefix.size());
+        if (i == 0) *os << "]";
+      }
+    }
+    *os << " ";
+  }
+  *os << endl;
+  *os << "Prediction: " << predict << "\t" << "Answer: " << ans << endl;
+  for (map<string, int>::iterator it = model.labels.begin(); it != model.labels.end(); it++) {
+    *os << (*it).first << ": " << scores[(*it).second] << "\t";
+  }
+  *os << endl;
+
+  for (map<string, int>::iterator it = model.labels.begin(); it != model.labels.end(); it++) {
+    *os << "--------------------------" << endl;
+    *os << (*it).first << " Label Feature Rank" << endl;
+    map<string, vector<double> >::iterator wit;
+    map<double, string> value_attrs;
+    for (vector<string>::iterator ait = attrs.begin(); ait != attrs.end(); ait++) {
+      if ((wit = model.weights.find(*ait)) != model.weights.end()) {
+        value_attrs[(*wit).second[(*it).second]] = *ait;
+        // *os << (*ait) << ": " << (*wit).second[(*it).second] << endl;
+      }
+    }
+    int i = 1;
+    for (map<double, string>::reverse_iterator mit = value_attrs.rbegin(); mit != value_attrs.rend() && i < 11; mit++) {
+      *os << "[" << i << "] " << (*mit).second << ": " <<  (*mit).first << endl;
+      i++;
+    }
+  }
+  *os << endl;
 }
 
 void Decoder::print_model(ostream *os) {

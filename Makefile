@@ -13,7 +13,7 @@ FILES = Makefile $(SRC) $(PROG).py tests/*
 all: $(PROG)
 
 $(PROG): $(SRC)
-	$(CPP) $(LDFLAGS) $< -o $@
+	$(CPP) -O3 $(LDFLAGS) $< -o $@
 
 clean:
 	$(RM) $(PROG) $(OBJ)

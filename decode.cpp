@@ -157,7 +157,6 @@ void Decoder::printLog(vector<double> &scores, vector<string> &attrs, ostream *o
 
   for (map<string, int>::iterator it = model.labels.begin(); it != model.labels.end(); it++) {
     *os << "--------------------------" << endl;
-    *os << (*it).first << " Label Feature Rank" << endl;
     map<string, vector<double> >::iterator wit;
     map<double, string> value_attrs;
     for (vector<string>::iterator ait = attrs.begin(); ait != attrs.end(); ait++) {
@@ -167,7 +166,15 @@ void Decoder::printLog(vector<double> &scores, vector<string> &attrs, ostream *o
       }
     }
     int i = 1;
+    *os << (*it).first << " Label Feature Top" << endl;
     for (map<double, string>::reverse_iterator mit = value_attrs.rbegin(); mit != value_attrs.rend() && i < 11; mit++) {
+      *os << "[" << i << "] " << (*mit).second << ": " <<  (*mit).first << endl;
+      i++;
+    }
+    i = 1;
+    *os << endl;
+    *os << (*it).first << " Label Feature Worst" << endl;
+    for (map<double, string>::iterator mit = value_attrs.begin(); mit != value_attrs.end() && i < 11; mit++) {
       *os << "[" << i << "] " << (*mit).second << ": " <<  (*mit).first << endl;
       i++;
     }
